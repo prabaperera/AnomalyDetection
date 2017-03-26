@@ -108,9 +108,9 @@ X_outliers = load_x_outliner()
 # fit the model
 clf = LocalOutlierFactor(n_neighbors=20)
 clf.fit(X_train)
-y_pred_train = clf.predict(X_train)
-y_pred_test = clf.predict(X_test)
-y_pred_outliers = clf.predict(X_outliers)
+y_pred_train = clf.fit_predict(X_train)
+y_pred_test = clf.fit_predict(X_test)
+y_pred_outliers = clf.fit_predict(X_outliers)
 n_error_train = y_pred_train[y_pred_train == -1].size
 n_error_test = y_pred_test[y_pred_test == -1].size
 n_error_outliers = y_pred_outliers[y_pred_outliers == 1].size
