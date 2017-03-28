@@ -287,8 +287,8 @@ def redteam_model_if():
 
     y_pred_outliers = clf.predict(X_outliers)
     n_error_outliers = y_pred_outliers[y_pred_outliers == 1].size
-    print(y_pred_outliers.size)
-    print(n_error_outliers)
+    print("total outliners: "+ str(len(X_outliers)))
+    print("error in outliners: "+ str(n_error_outliers))
 
     
 def test_model_if():
@@ -302,8 +302,8 @@ def test_model_if():
 
     y_pred_test = clf.predict(X_test)
     n_error_test = y_pred_test[y_pred_test == -1].size
-    print(len(X_test))
-    print(n_error_test)
+    print("total test records: "+ str(len(X_test)))
+    print("error in test records: "+str(n_error_test))
     
     
           
@@ -370,6 +370,7 @@ setup()
 #file_wr_auth = open(filename_wr_auth,"w")
 file_wr_auth=None
 filenames=os.listdir(dir_read_train)
+filenames.sort()
 print('all the filenames in the directory: '+ str(filenames))
 
 for i in filenames:
@@ -404,7 +405,7 @@ test_model_if()
 ##load readteam
 set_key=set()
 file_wr_auth=open(redteam_file,"w")
-print('file: '+i +' reading......')
+print('file: '+redteam_file +' reading......')
 read_file (dir_base+'/red_team/readteam.txt')
 for item in set_key:
     write_auth(item)
