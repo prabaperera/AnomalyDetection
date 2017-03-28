@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.ensemble import IsolationForest
 from sklearn.externals import joblib
+import os
+
 
 
 def read_file(filename_rd):     
@@ -16,83 +18,73 @@ def read_file(filename_rd):
     
     with open(filename_rd) as f:
         for line in f:
-            process_line(line)
-        key_list=list(set_key)
-        for item in key_list:
-            load_x_train(item)
+            process_line(line)    
 
-    model_if()
+
+#test_file
+
+def load_x_test_redteam (filename) :
+
+    list_data=[[]]
     
-    
-            
-def load_x_test () :
-    filename_read='C:/Users/chamini/Documents/GitHub/AnomalyDetection/feactures_auth_2.txt'
-    list_test_data=[[]]
     j=0
-    with open(filename_read) as f:
+    with open(filename) as f:
         for line in f:
-            array_split=line.split(',')
-            
-            array_split.pop(0)
-            array_split.pop(0)
-            array_split.pop(0)
-            array_split.pop()
-            array_split.pop()
-            
-            
-            #print(array_split)
-            #print('J: ' + str (j))
-            
-            for i in array_split:
-                #print(float(i))
-                list_test_data[j].append(float(i))
-            list_test_data.append([])
+            array_split=line.split('[')
+            array_split=array_split[0].split(']')            
+            array_split=array_split[0].split(',')
+            for i in array_split:        
+                list_data[j].append(float(i))
+            list_data.append([])
             j=j+1
     
-    list_test_data.pop()
-    return list_test_data
-
+    list_data.pop()    
+    return list_data
 
     
-def load_x_outliner () :
-    filename_read='C:/Users/chamini/Documents/GitHub/AnomalyDetection/feactures_readteam.txt'
-    list_test_data=[[]]
+def load_x_train () :
+
+    list_data=[[]]
+    list_str=[]
+    
     j=0
-    with open(filename_read) as f:
+    with open(wr_file) as f:
         for line in f:
-            array_split=line.split(',')
-            
-            array_split.pop(0)
-            array_split.pop(0)
-            array_split.pop(0)
-            array_split.pop()
-            array_split.pop()
-            #print(array_split)
-            #print('J: ' + str (j))
-            
-            for i in array_split:
-                #print(float(i))
-                list_test_data[j].append(float(i))
-            list_test_data.append([])
+            list_str.append(line)
+            array_split=line.split(',')            
+            for i in array_split:        
+                list_data[j].append(float(i))
+            list_data.append([])
             j=j+1
     
-    list_test_data.pop()
-    return list_test_data
+    list_data.pop()
+    list_len=len(list_data)
+    test_set_len=int(list_len*.05)
+    train_set_len=list_len-test_set_len
+   
+    while (len(list_data) > train_set_len ):
+        record=list_str[train_set_len-1]
+        test_wr_file.write(record)
+        del list_data[train_set_len-1]  
+        del list_str[train_set_len-1]
+    return list_data
 
 
-def load_x_train (key) :
+
+
+def write_auth (key) :
     
           
     global list_key
     global list_net_type
     global list_auth_type
     global dict_key
-    global list_data
+    global list_childdict
+    
   
     ind=dict_key.get(key,-1)
     
-    list_data.append([])
-    j=len(list_data)-1
+
     
     record=''
     if ind != -1:
@@ -130,11 +122,11 @@ def load_x_train (key) :
         for suc_fail in list_suc_fail:
             record=record+','+ str(child_dict.get(suc_fail,0))
         
-        array_split=record.split(',')
-        for i in array_split:
-            list_data[j].append(float(i))
         file_wr_auth.write(record)
         file_wr_auth.write('\n')
+        dict_key.pop(key)
+        list_childdict[ind]=None
+        
 
             
          
@@ -186,9 +178,7 @@ def process_line(line):
     elif 'SERVICE' in key:
         error='error3'
     elif(action==list_auth_ori[1]) and ind !=-1:
-        load_x_train(key)
-        dict_key.pop(key)
-        list_childdict[ind]=None
+        write_auth(key)
         set_key.remove(key)
         ind=dict_key.get(key,-1)
     elif ind != -1 and key in set_key and action not in list_auth_ori and auth_ori in list_auth_ori :
@@ -287,63 +277,137 @@ def process_line(line):
       new_indx=len(list_childdict)-1
       dict_key[key]=new_indx
             
-           
-def model_if():
-    rng = None
-    print('size1: '+ str (len(list_data)))
-    list_data.pop()
-    print('size2: '+ str (len(list_data)))
-    X_train=list_data
-    X_test=load_x_test()
-    X_outliers=load_x_outliner()
+def redteam_model_if():         
+    X_outliers=load_x_test_redteam(redteam_file)
+    dump_file=dir_base+'/model_dump/model_if.pkl'
+    if os.path.isfile(dump_file):
+        clf = joblib.load(dump_file)
+    else:
+        print('error in loading model')
 
-
-# fit the model
-    clf = IsolationForest(max_samples=100, random_state=rng)
-    clf.fit(X_train)
-    joblib.dump(clf, 'F:/dataset_AI/model_dump/model_if.pkl') 
-    clf = joblib.load('F:/dataset_AI/model_dump/model_if.pkl') 
-
-
-    y_pred_train = clf.predict(X_train)
-    y_pred_test = clf.predict(X_test)
     y_pred_outliers = clf.predict(X_outliers)
-
-    n_error_train = y_pred_train[y_pred_train == -1].size
-    n_error_test = y_pred_test[y_pred_test == -1].size
     n_error_outliers = y_pred_outliers[y_pred_outliers == 1].size
-                                  
-    print(y_pred_train.size)
-    print(y_pred_test.size)
-    print(y_pred_outliers.size)
+    print("total outliners: "+ str(len(X_outliers)))
+    print("error in outliners: "+ str(n_error_outliers))
 
-    print(n_error_train)
-    print(n_error_test)
-    print(n_error_outliers)
+    
+def test_model_if():
+    X_test=load_x_test_redteam(test_file)
+    #X_outliers=load_x_outliner()
+    dump_file=dir_base+'/model_dump/model_if.pkl'
+    if os.path.isfile(dump_file):
+        clf = joblib.load(dump_file)
+    else:
+        print('error in loading model')
+
+    y_pred_test = clf.predict(X_test)
+    n_error_test = y_pred_test[y_pred_test == -1].size
+    print("total test records: "+ str(len(X_test)))
+    print("error in test records: "+str(n_error_test))
+    
+    
+          
+def train_model_if():
+    rng = None     
+    X_train=load_x_train()
+    dump_file=dir_base+'/model_dump/model_if.pkl'
+    if os.path.isfile(dump_file):
+        clf = joblib.load(dump_file)
+    else:
+        clf = IsolationForest(max_samples=100, random_state=rng)
+    
+    clf.fit(X_train)
+    joblib.dump(clf,dump_file) 
 
 
+def setup():
+    global list_auth_type
+    with open(dir_base+'/auth_type.txt') as f:
+        for line in f:
+            line=line.rstrip('\r\n')
+            list_auth_type.append(line)
+    print(list_auth_type)
+    
+    global list_net_type
+    with open(dir_base+'/net_type.txt') as f:
+        for line in f:
+            line=line.rstrip('\r\n')
+            list_net_type.append(line)
+    print(list_net_type)
+    
+    if not os.path.exists(dir_base+'/temp_feactures'):
+         os.makedirs(dir_base+'/temp_feactures')
+    if not os.path.exists(dir_base+'/model_dump'):
+         os.makedirs(dir_base+'/model_dump')
+    if not os.path.exists(dir_base+'/red_team'):
+         os.makedirs(dir_base+'/red_team')
 
-#'F:/dataset_AI/auth.txt'
-filename_rd_auth='F:/dataset_AI/splitted_files/auth_orignal.txt'
-filename_wr_auth='F:/dataset_AI/splitted_files/fect_auth_new.txt'
+    
+    
+
 
 dict_key={}
 list_childdict=[]
 set_key=set()
-list_data=[[]]
-
-
-  
-list_auth_type= ['MICROSOFT_AUTHENTICATION_PACKAGE_','Kerberos','MICROSOFT_AUTHENTICATION_PACK','?',
-'MICROSOFT_AUTHENTICATION_PAC','MICROSOFT_AUTHENTICATION_PA','MICROSOFT_AUTHENTICATION_PACKAG',
-'MICROSOFT_AUTHENTICATION_PACKAGE_V1','MICROSOFT_AUTHENTICATION_PACKAGE_V1_0','Negotiate','NTLM','MICROSOFT_AUTHENTICATION_PACKAGE']
-list_net_type=['Interactive','Network','RemoteInteractive','?','Batch','NewCredentials','Unlock','Service','NetworkCleartext','CachedInteractive']
+list_auth_type= []
+list_net_type=[]
 list_auth_ori=['LogOn','LogOff']
 list_suc_fail=['Success','Fail']
 list_st_end=['Start','End']
 
+#'F:/dataset_AI/auth.txt'
+#filename_rd_auth='F:/dataset_AI/splitted_files/auth_orignal.txt'
 
-print("Reading..")
-file_wr_auth = open(filename_wr_auth,"w")
-read_file (filename_rd_auth)
+dir_read_train='E:/AI/train/'
+dir_base='E:/AI'
+wr_file=dir_base+'/temp_feactures/fect_train.txt'   
+test_file=dir_base+'/temp_feactures/fect_test.txt'  
+redteam_file=dir_base+'/temp_feactures/fect_readteam.txt' 
+test_wr_file=open(test_file,"w")
+
+setup()
+
+#file_wr_auth = open(filename_wr_auth,"w")
+file_wr_auth=None
+filenames=os.listdir(dir_read_train)
+filenames.sort()
+print('all the filenames in the directory: '+ str(filenames))
+
+for i in filenames:
+    i=dir_read_train+i   
+     
+    file_wr_auth=open(wr_file,"w")
+    print('file: '+i +' reading......')
+    read_file (i)
+    file_wr_auth.close()
+    print('file: '+i +' train started......')
+    train_model_if()
+    print('file: '+i +' train end......')
+    
+
+#to write the last set
+print('writing last set')
+#key_list=list(set_key)
+file_wr_auth=open(wr_file,"w")
+for item in set_key:
+    write_auth(item)
+file_wr_auth.close()
+print('traing last set started')
+train_model_if()
+print('traing last set ended')
+
+
+print('model testing started..')
+test_wr_file.close()
+test_model_if()
+
+
+##load readteam
+set_key=set()
+file_wr_auth=open(redteam_file,"w")
+print('file: '+redteam_file +' reading......')
+read_file (dir_base+'/red_team/readteam.txt')
+for item in set_key:
+    write_auth(item)
+redteam_model_if()
 file_wr_auth.close()
