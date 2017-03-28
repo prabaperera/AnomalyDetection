@@ -372,6 +372,7 @@ file_wr_auth=None
 filenames=os.listdir(dir_read_train)
 filenames.sort()
 print('all the filenames in the directory: '+ str(filenames))
+<<<<<<< HEAD
 
 for i in filenames:
     i=dir_read_train+i   
@@ -391,6 +392,46 @@ print('writing last set')
 file_wr_auth=open(wr_file,"w")
 for item in set_key:
     write_auth(item)
+=======
+
+for i in filenames:
+    i=dir_read_train+i   
+     
+    file_wr_auth=open(wr_file,"w")
+    print('file: '+i +' reading......')
+    read_file (i)
+    file_wr_auth.close()
+    print('file: '+i +' train started......')
+    train_model_if()
+    print('file: '+i +' train end......')
+    
+
+#to write the last set
+print('writing last set')
+#key_list=list(set_key)
+file_wr_auth=open(wr_file,"w")
+for item in set_key:
+    write_auth(item)
+file_wr_auth.close()
+print('traing last set started')
+train_model_if()
+print('traing last set ended')
+
+
+print('model testing started..')
+test_wr_file.close()
+test_model_if()
+
+
+##load readteam
+set_key=set()
+file_wr_auth=open(redteam_file,"w")
+print('file: '+redteam_file +' reading......')
+read_file (dir_base+'/red_team/readteam.txt')
+for item in set_key:
+    write_auth(item)
+redteam_model_if()
+>>>>>>> 8d5be91b4085ab9a850ff55558768caf3d492621
 file_wr_auth.close()
 print('traing last set started')
 train_model_if()
